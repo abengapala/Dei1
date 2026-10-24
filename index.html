@@ -125,8 +125,8 @@
 <script>
   // ✏️ EDIT THESE ✏️
   const CONFIG = {
-    herName: "Love",                   // her name or nickname
-    yourName: "me",                    // used on the send button: "Send my answer to ___"
+    herName: "Deidree",                   // her name or nickname
+    yourName: "Love",                    // used on the send button: "Send my answer to ___"
     monthsary: "Happy monthsary!",     // e.g. "Happy 5th monthsary!"
     subtitle: "I made something small to ask you something big.",
     dayLabel: "Tonight",               // e.g. "Tonight", "Saturday", "Oct 24"
@@ -135,11 +135,11 @@
   };
 
   // Brands. Put logo files in an "images" folder next to index.html using these file names
-  // (png, e.g. images/bonchon.png). If a file is missing, a colored name badge shows instead.
+  // (png, jpg, jpeg or webp, e.g. images/bonchon.png). If a file is missing, a colored name badge shows instead.
   const BRANDS = {
     avocadoria: { name: "Avocadoria",  bg: "#5b8c2a", fg: "#fff" },
     bonchon:    { name: "Bonchon",     bg: "#d71920", fg: "#fff" },
-    yaoyao:     { name: "Yaoyao",      bg: "#f2b01e", fg: "#3a0f2b" },
+    llaollao:   { name: "Llaollao",    bg: "#e5489a", fg: "#fff" },
     mcdo:       { name: "McDo",        bg: "#ffc72c", fg: "#da291c" },
     manginasal: { name: "Mang Inasal", bg: "#1f7a3d", fg: "#fff" },
     cine:       { name: "Cine",        emoji: "🎬" }
@@ -147,9 +147,9 @@
 
   const PLANS = [
     { brands: ["avocadoria", "bonchon"], label: "Avocadoria + Bonchon" },
-    { brands: ["yaoyao", "bonchon"],     label: "Yaoyao + Bonchon" },
+    { brands: ["llaollao", "bonchon"],   label: "Llaollao + Bonchon" },
     { brands: ["mcdo", "avocadoria"],    label: "McDo + Avocadoria" },
-    { brands: ["manginasal", "yaoyao"],  label: "Mang Inasal + Yaoyao" },
+    { brands: ["manginasal", "llaollao"], label: "Mang Inasal + Llaollao" },
     { brands: ["cine"],                  label: "Cine date 🎬" }
   ];
 
@@ -230,8 +230,12 @@
     if (b.emoji) { box.classList.add("cine"); box.textContent = b.emoji; return box; }
     const img = document.createElement("img");
     img.alt = b.name;
-    img.src = "images/" + key + ".png";
+    const exts = ["png", "jpg", "jpeg", "webp"];
+    let n = 0;
+    img.src = "images/" + key + "." + exts[n];
     img.onerror = () => {
+      n++;
+      if (n < exts.length) { img.src = "images/" + key + "." + exts[n]; return; }
       box.classList.add("fallback");
       box.style.background = b.bg;
       box.style.color = b.fg;
