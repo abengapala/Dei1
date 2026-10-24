@@ -130,7 +130,7 @@
     monthsary: "Happy monthsary!",     // e.g. "Happy 5th monthsary!"
     subtitle: "I made something small to ask you something big.",
     dayLabel: "Tonight",               // e.g. "Tonight", "Saturday", "Oct 24"
-    phone: "09560641174",                         // your number, e.g. "+639171234567" (leave "" to use Share/Copy instead)
+    phone: "+639560641174",                         // your number, e.g. "+639171234567" (leave "" to use Share/Copy instead)
     times: ["5:00 PM", "6:00 PM", "7:00 PM", "8:00 PM"]
   };
 
@@ -296,6 +296,22 @@
     $("send").textContent = "Send my answer to " + CONFIG.yourName + " 💌";
     hearts(60);
     show("s4");
+    notify();
+  }
+
+  // Tells you automatically (Telegram, via /api/notify). If it isn't set up, the SMS/Share button below still works.
+  async function notify() {
+    try {
+      const r = await fetch("/api/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: chosenPlan.label, day: CONFIG.dayLabel, time: chosenTime })
+      });
+      if (r.ok) {
+        $("doneText").textContent = "Sent! " + CONFIG.yourName + " got your answer 💗";
+        $("send").style.display = "none";
+      }
+    } catch (e) { /* keep the manual button */ }
   }
 
   $("send").addEventListener("click", async () => {
