@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>A question for you</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  :root { --wine:#3a0f2b; --plum:#5a1a43; --plum2:#6d2454; --petal:#ffb3c7; --rose:#ff5c8a; --cream:#fff3ee; }
+  * { box-sizing: border-box; }
+  html { min-height: 100%; background: var(--wine); }
+  body {
+    margin: 0; min-height: 100vh; background: var(--wine); color: var(--cream);
+    font-family: "Nunito", system-ui, sans-serif;
+    display: grid; place-items: center; overflow-x: hidden;
+    padding: calc(24px + env(safe-area-inset-top, 0px)) 18px calc(24px + env(safe-area-inset-bottom, 0px));
+  }
+  main { text-align: center; max-width: 34rem; width: 100%; }
+  section { display: none; }
+  section.active { display: block; }
+  .heart { font-size: 4rem; display: block; animation: beat 1.4s ease-in-out infinite; }
+  h1 { font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: clamp(1.8rem, 7vw, 2.8rem); line-height: 1.15; margin: .8rem 0 .5rem; }
+  p.sub { font-size: 1.05rem; line-height: 1.5; margin: 0 auto 1.6rem; max-width: 26rem; color: var(--petal); }
+  button { font: inherit; font-weight: 800; border: 0; border-radius: 999px; cursor: pointer; padding: .9rem 2rem; color: inherit; }
+  button:focus-visible { outline: 3px solid var(--cream); outline-offset: 3px; }
+
+  /* Step 1: yes / no */
+  .buttons { display: flex; gap: 1rem; justify-content: center; align-items: center; min-height: 6rem; flex-wrap: wrap; }
+  #yes { position: relative; z-index: 4; isolation: isolate; background: transparent; color: #fff; font-size: 1.1rem; }
+  #yes::before {
+    content: ""; position: absolute; inset: 0; z-index: -1; background: var(--rose);
+    border-radius: var(--r, 999px); transform: scale(var(--s, 1));
+    transition: transform .7s ease, border-radius .7s ease;
+  }
+  #yesLabel { display: inline-block; transform: translate(var(--tx, 0px), var(--ty, 0px)) scale(var(--t, 1)); transition: transform .7s ease; }
+  #no { background: var(--plum); color: var(--petal); font-size: 1rem; }
+  #no.runaway { position: fixed; z-index: 5; transition: left .25s ease, top .25s ease; }
+  #hint { min-height: 1.5rem; margin: 1.2rem 0 0; color: var(--petal); }
+
+  /* Step 2: plan cards */
+  .plans { display: grid; gap: .8rem; text-align: left; }
+  .plan {
+    display: flex; align-items: center; gap: .7rem; width: 100%;
+    background: var(--plum); border-radius: 1.2rem; padding: .8rem 1rem;
+    border: 3px solid transparent; transition: transform .12s ease, border-color .12s ease;
+  }
+  .plan:hover { border-color: var(--petal); transform: translateY(-2px); }
+  .plan .plus { font-size: 1.4rem; color: var(--petal); }
+  .plan .label { margin-left: auto; font-size: .95rem; color: var(--petal); text-align: right; }
+  .brand { display: grid; place-items: center; width: 5.2rem; height: 3.4rem; border-radius: .8rem; background: #fff; overflow: hidden; padding: .3rem; }
+  .brand img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .brand.fallback { padding: .2rem; font-size: .8rem; font-weight: 800; text-align: center; line-height: 1.1; }
+  .brand.cine { background: #14141f; font-size: 2rem; }
+
+  /* Step 3: time */
+  .times { display: grid; grid-template-columns: repeat(2, 1fr); gap: .8rem; }
+  .time { background: var(--plum); font-size: 1.2rem; padding: 1rem; border: 3px solid transparent; }
+  .time:hover { border-color: var(--petal); }
+  .other { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; justify-content: center; background: var(--plum); border-radius: 1.4rem; padding: .7rem 1rem; }
+  .other label { font-weight: 800; }
+  .other input { font: inherit; border-radius: .6rem; border: 0; padding: .5rem .7rem; }
+  .other button { background: var(--rose); color: #fff; padding: .6rem 1.1rem; }
+  .back { background: none; color: var(--petal); margin-top: 1.2rem; padding: .5rem 1rem; text-decoration: underline; }
+
+  /* Step 4: summary */
+  .summary { background: var(--plum); border-radius: 1.2rem; padding: 1.2rem; margin: 0 0 1.4rem; }
+  .summary .brands { display: flex; gap: .6rem; justify-content: center; align-items: center; margin-bottom: .8rem; }
+  .summary .when { font-size: 1.3rem; font-weight: 800; }
+  .send { background: var(--rose); color: #fff; font-size: 1.05rem; }
+  #sendNote { min-height: 1.5rem; margin-top: .8rem; color: var(--petal); }
+
+  .fall { position: fixed; top: -2rem; font-size: 1.6rem; pointer-events: none; animation: fall linear forwards; z-index: 10; }
+  @keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
+  @keyframes beat { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+  @media (prefers-reduced-motion: reduce) { .heart { animation: none; } #no.runaway, .plan, #yes::before, #yesLabel { transition: none; } }
+</style>
+</head>
+<body>
+<main>
+  <!-- 1. The question -->
+  <section id="s1" class="active">
+    <span class="heart" aria-hidden="true">💗</span>
+    <h1 id="title"></h1>
+    <p class="sub" id="subtitle"></p>
+    <div class="buttons">
+      <button id="yes" type="button"><span id="yesLabel">Yes</span></button>
+      <button id="no" type="button">No</button>
+    </div>
+    <p id="hint" aria-live="polite"></p>
+  </section>
+
+  <!-- 2. Pick the date -->
+  <section id="s2">
+    <span class="heart" aria-hidden="true">🥰</span>
+    <h1>Yay! Now pick our date 💖</h1>
+    <p class="sub">Choose the one you want most.</p>
+    <div class="plans" id="plans"></div>
+  </section>
+
+  <!-- 3. Pick the time -->
+  <section id="s3">
+    <span class="heart" aria-hidden="true">🕔</span>
+    <h1>What time?</h1>
+    <p class="sub">Pick a time that works for you.</p>
+    <div class="times" id="times"></div>
+    <button class="back" id="backToPlans" type="button">Back</button>
+  </section>
+
+  <!-- 4. Done -->
+  <section id="s4">
+    <span class="heart" aria-hidden="true">💞</span>
+    <h1>It’s a date! 💖</h1>
+    <p class="sub" id="doneText"></p>
+    <div class="summary">
+      <div class="brands" id="doneBrands"></div>
+      <div class="when" id="doneWhen"></div>
+    </div>
+    <button class="send" id="send" type="button"></button>
+    <div id="sendNote" aria-live="polite"></div>
+  </section>
+</main>
+
+<script>
+  // ✏️ EDIT THESE ✏️
+  const CONFIG = {
+    herName: "Love",                   // her name or nickname
+    yourName: "me",                    // used on the send button: "Send my answer to ___"
+    monthsary: "Happy monthsary!",     // e.g. "Happy 5th monthsary!"
+    subtitle: "I made something small to ask you something big.",
+    dayLabel: "Tonight",               // e.g. "Tonight", "Saturday", "Oct 24"
+    phone: "",                         // your number, e.g. "+639171234567" (leave "" to use Share/Copy instead)
+    times: ["5:00 PM", "6:00 PM", "7:00 PM", "8:00 PM"]
+  };
+
+  // Brands. Put logo files in an "images" folder next to index.html using these file names
+  // (png, e.g. images/bonchon.png). If a file is missing, a colored name badge shows instead.
+  const BRANDS = {
+    avocadoria: { name: "Avocadoria",  bg: "#5b8c2a", fg: "#fff" },
+    bonchon:    { name: "Bonchon",     bg: "#d71920", fg: "#fff" },
+    yaoyao:     { name: "Yaoyao",      bg: "#f2b01e", fg: "#3a0f2b" },
+    mcdo:       { name: "McDo",        bg: "#ffc72c", fg: "#da291c" },
+    manginasal: { name: "Mang Inasal", bg: "#1f7a3d", fg: "#fff" },
+    cine:       { name: "Cine",        emoji: "🎬" }
+  };
+
+  const PLANS = [
+    { brands: ["avocadoria", "bonchon"], label: "Avocadoria + Bonchon" },
+    { brands: ["yaoyao", "bonchon"],     label: "Yaoyao + Bonchon" },
+    { brands: ["mcdo", "avocadoria"],    label: "McDo + Avocadoria" },
+    { brands: ["manginasal", "yaoyao"],  label: "Mang Inasal + Yaoyao" },
+    { brands: ["cine"],                  label: "Cine date 🎬" }
+  ];
+
+  const noLines = [
+    "Are you sure? 🥺", "Look at the Yes button. It’s so happy.", "That button is not working today.",
+    "Wrong button, love.", "I’ll pay for dessert 🍰", "Okay but really, say yes 🥹",
+    "I can do this all night.", "You’re getting tired. Just press Yes 💗"
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const show = (id) => {
+    document.querySelectorAll("section").forEach((s) => s.classList.remove("active"));
+    $(id).classList.add("active");
+    window.scrollTo(0, 0);
+  };
+  let chosenPlan = null, chosenTime = null;
+
+  $("title").textContent = CONFIG.herName + ", will you have dinner with me?";
+  $("subtitle").textContent = CONFIG.monthsary + " " + CONFIG.subtitle;
+
+  // ---------- Step 1: runaway No ----------
+  const yes = $("yes"), no = $("no"), hint = $("hint");
+  const label = $("yesLabel");
+  let tries = 0, base = null;
+  let lastDodge = 0;
+  function dodge(e) {
+    if (e) e.preventDefault();
+    // A single phone tap fires several events at once, so count it only once
+    const now = Date.now();
+    if (now - lastDodge < 400) return;
+    lastDodge = now;
+    tries++;
+    no.classList.add("runaway");
+    const pad = 12;
+    const maxX = window.innerWidth - no.offsetWidth - pad;
+    const maxY = window.innerHeight - no.offsetHeight - pad;
+    no.style.left = pad + Math.random() * Math.max(0, maxX - pad) + "px";
+    no.style.top = pad + Math.random() * Math.max(0, maxY - pad) + "px";
+    // Yes grows smoothly with every try until it fills the whole screen
+    const STEPS = 8; // number of tries until Yes covers the screen
+    const vw = window.innerWidth, vh = window.innerHeight;
+    if (!base) {
+      const r = yes.getBoundingClientRect();
+      base = { cx: r.left + r.width / 2, cy: r.top + r.height / 2, w: r.width, h: r.height, lw: label.offsetWidth };
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
+    }
+    const p = Math.min(tries / STEPS, 1);
+    const ease = Math.pow(p, 1.6);
+    const fullS = 1.05 * Math.max(
+      2 * Math.max(base.cx, vw - base.cx) / base.w,
+      2 * Math.max(base.cy, vh - base.cy) / base.h
+    );
+    const fullT = Math.min(vw * 0.8 / base.lw, 14);
+    yes.style.setProperty("--s", 1 + (fullS - 1) * ease);
+    yes.style.setProperty("--r", p >= 1 ? "0px" : (1 - p) * 2 + "rem");
+    label.style.setProperty("--t", 1 + (fullT - 1) * ease);
+    label.style.setProperty("--tx", (vw / 2 - base.cx) * ease + "px");
+    label.style.setProperty("--ty", (vh / 2 - base.cy) * ease + "px");
+    yes.style.zIndex = p >= 1 ? 20 : 4;
+    if (p >= 1) { hint.textContent = ""; return; }
+    hint.textContent = noLines[(tries - 1) % noLines.length];
+  }
+  ["mouseenter", "pointerdown", "touchstart", "focus", "click"].forEach((evt) =>
+    no.addEventListener(evt, dodge, { passive: false })
+  );
+  yes.addEventListener("click", () => {
+    no.style.display = "none";
+    hearts(40);
+    show("s2");
+  });
+
+  // ---------- Brand badge ----------
+  function brandBadge(key) {
+    const b = BRANDS[key];
+    const box = document.createElement("div");
+    box.className = "brand";
+    if (b.emoji) { box.classList.add("cine"); box.textContent = b.emoji; return box; }
+    const img = document.createElement("img");
+    img.alt = b.name;
+    img.src = "images/" + key + ".png";
+    img.onerror = () => {
+      box.classList.add("fallback");
+      box.style.background = b.bg;
+      box.style.color = b.fg;
+      box.textContent = b.name;
+    };
+    box.appendChild(img);
+    return box;
+  }
+
+  // ---------- Step 2: plans ----------
+  PLANS.forEach((plan) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "plan";
+    plan.brands.forEach((k, i) => {
+      if (i > 0) { const p = document.createElement("span"); p.className = "plus"; p.textContent = "+"; btn.appendChild(p); }
+      btn.appendChild(brandBadge(k));
+    });
+    const label = document.createElement("span");
+    label.className = "label";
+    label.textContent = plan.label;
+    btn.appendChild(label);
+    btn.addEventListener("click", () => { chosenPlan = plan; show("s3"); });
+    $("plans").appendChild(btn);
+  });
+
+  // ---------- Step 3: times ----------
+  CONFIG.times.forEach((t) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "time"; b.textContent = t;
+    b.addEventListener("click", () => finish(t));
+    $("times").appendChild(b);
+  });
+  const other = document.createElement("div");
+  other.className = "other";
+  other.innerHTML = '<label for="customTime">Other time</label><input id="customTime" type="time" value="18:00"><button type="button" id="customGo">Choose</button>';
+  $("times").appendChild(other);
+  $("customGo").addEventListener("click", () => {
+    const v = $("customTime").value;
+    if (!v) return;
+    let [h, m] = v.split(":").map(Number);
+    const ap = h >= 12 ? "PM" : "AM";
+    h = h % 12 || 12;
+    finish(h + ":" + String(m).padStart(2, "0") + " " + ap);
+  });
+  $("backToPlans").addEventListener("click", () => show("s2"));
+
+  // ---------- Step 4: done ----------
+  function finish(time) {
+    chosenTime = time;
+    $("doneBrands").innerHTML = "";
+    chosenPlan.brands.forEach((k, i) => {
+      if (i > 0) { const p = document.createElement("span"); p.className = "plus"; p.textContent = "+"; $("doneBrands").appendChild(p); }
+      $("doneBrands").appendChild(brandBadge(k));
+    });
+    $("doneWhen").textContent = chosenPlan.label + " · " + CONFIG.dayLabel + ", " + time;
+    $("doneText").textContent = "Can’t wait to see you. Tap below so I know your answer.";
+    $("send").textContent = "Send my answer to " + CONFIG.yourName + " 💌";
+    hearts(60);
+    show("s4");
+  }
+
+  $("send").addEventListener("click", async () => {
+    const msg = "Yes! 💖 " + chosenPlan.label.replace(" 🎬", "") + " · " + CONFIG.dayLabel + ", " + chosenTime;
+    if (CONFIG.phone) {
+      const sep = /iPad|iPhone|iPod/.test(navigator.userAgent) ? "&" : "?";
+      window.location.href = "sms:" + CONFIG.phone + sep + "body=" + encodeURIComponent(msg);
+      return;
+    }
+    try {
+      if (navigator.share) { await navigator.share({ text: msg }); return; }
+      await navigator.clipboard.writeText(msg);
+      $("sendNote").textContent = "Copied! Paste it in our chat 💗";
+    } catch (e) {
+      $("sendNote").textContent = msg;
+    }
+  });
+
+  // ---------- Falling hearts ----------
+  function hearts(n) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const icons = ["💖", "💗", "🌹", "💕", "✨"];
+    for (let i = 0; i < n; i++) {
+      const s = document.createElement("span");
+      s.className = "fall";
+      s.textContent = icons[Math.floor(Math.random() * icons.length)];
+      s.style.left = Math.random() * 100 + "vw";
+      s.style.animationDuration = 3 + Math.random() * 3 + "s";
+      s.style.animationDelay = Math.random() * 1.5 + "s";
+      document.body.appendChild(s);
+      setTimeout(() => s.remove(), 8000);
+    }
+  }
+</script>
+</body>
+</html>
